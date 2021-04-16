@@ -2,14 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 script to prepare the matrices derived from MRtrix3 anatomical constrainted tractography
-for graph analysis using the Brain Connectivity toolbox in Matlab.
+(i.e. MRTRIX_construct_connectome.sh) for graph analysis using the Brain Connectivity toolbox in Matlab.
 
-@author: C. Vriend & Bernardo Maciel - 2020
-Amsterdam UMC - dpt. Anatomy & Neurosciences | Psychiatry
+@author: Chris Vriend & Bernardo Maciel - 2020
+Amsterdam UMC | location VUmc - dpt. Anatomy & Neurosciences | Psychiatry
 
 """
-
-
 
 ########################
 # IMPORT MODULES       #
@@ -39,7 +37,7 @@ EXnodes=[117,118]
 #########################
 if not os.path.exists(outputdir):
         os.makedirs(outputdir)
-        
+
 os.chdir(workdir)
 # list comprehension | find files in work directory that start with sub
 subjfiles=[subjfiles for subjfiles in os.listdir(workdir)
@@ -51,7 +49,7 @@ subjfiles.sort()
 
 ##########################
 #   FUNCTIONS            #
-########################## 
+##########################
 def symmetrize(mat):
         """
         Transforms an upper triangular matrix in a symmetric matrix by copying the values from position i,j to position j,i
@@ -98,12 +96,12 @@ def modYEOandMatrix(yeofile,matrixfile,nodes):
     None.
 
     """
-   
+
     filebase=(os.path.splitext(yeofile))[0]
     basematrix=(os.path.splitext(matrixfile))[0]
     yeo=pd.read_csv(yeofile, delimiter="\t",names=['BNA','YEO'])
     mat = np.genfromtxt(matrixfile, skip_header = 0, delimiter = ' ')
-    
+
     # symmetrize matrix + convert to dataFrame
     PDmatrix=pd.DataFrame(symmetrize(mat))
 
@@ -119,38 +117,38 @@ def modYEOandMatrix(yeofile,matrixfile,nodes):
         PDmatrix.drop(indexNames,axis=0,inplace=True)
         # delete column
         PDmatrix.drop(indexNames,axis=1,inplace=True)
-        
+
     if yeo.shape[0] != PDmatrix.shape[0]:
        sys.exit('YEO label file and connectivity matrix do not have the same length - after exclusion of nodes')
-        
+
     # reset index to be consistent with numpy SC matrix later on
     yeo.reset_index(inplace=True,drop=True)
-    
+
     oddidx=yeo.index[yeo.BNA.isin([num for num in pd.Series(yeo.BNA) if num % 2 == 1])].tolist()
     evenidx=yeo.index[yeo.BNA.isin([num for num in pd.Series(yeo.BNA) if num % 2 == 0])].tolist()
-    
-    
+
+
     # reshuffle legend file with odd and even using BNA label as 'key'
     oddYEO=yeo[yeo.BNA.isin([num for num in pd.Series(yeo.BNA) if num % 2 == 1])]
     evenYEO=yeo[yeo.BNA.isin([num for num in pd.Series(yeo.BNA) if num % 2 == 0])]
-    
+
         # concatenate odd and even, reset index
     yeo2=pd.concat([oddYEO,evenYEO],ignore_index=True)
-    
+
         #start index at 1 to be consistent with matlab
     yeo2.index +=1
-    
+
     if not os.path.exists(os.path.join(outputdir,(filebase + '_mod2sample.txt'))):
-    
+
         # write to txt w/ index
         # yeo2.to_csv(filebase + '_mod2sample.csv',header=False,sep='\t')
-   
+
         # write to txt w/o index (only needs to be saved once)
         yeo2.to_csv(os.path.join(outputdir,(filebase + '_mod2sample.txt')),index=False,header=False,sep='\t')
 
     ###########################
     # reshuffle SC matrix
-    ########################### 
+    ###########################
     # dataframe to numpy matrix
     mat=PDmatrix.to_numpy()
     # select rows
@@ -168,13 +166,13 @@ def modYEOandMatrix(yeofile,matrixfile,nodes):
     # save to mat file
     mdic={"connmatrix":matrix_reshuffled,"label":"none"}
     savemat(os.path.join(outputdir,(basematrix + "_reshuffled.mat")),mdic)
-    
+
     ###########################
     # make heatmap
-    ########################### 
+    ###########################
     # below code for creating the heatmap is derived from: https://github.com/multinetlab-amsterdam/network_TDA_tutorial
-    
-    
+
+
     #Creating a DataFrame with will have the brain areas as rows and column names for easier plotting of heatmap
     matrixdiagNaN = matrix_reshuffled.copy()
     np.fill_diagonal(matrixdiagNaN,np.nan)
@@ -182,14 +180,14 @@ def modYEOandMatrix(yeofile,matrixfile,nodes):
     mu=np.nanmean(matrixdiagNaN)
     # compute nonzero std
     sig=np.nanstd(matrixdiagNaN)
-    
+
     # z-transform matrix
     matrixdiagNaN2=(matrixdiagNaN-mu) / sig
-    
+
     temp=matrixdiagNaN2 - np.nanmin(matrixdiagNaN2)
     matrixdiagNaN3=np.divide(temp,np.nanmax(temp))
-    
-    
+
+
     figmatrix = pd.DataFrame(matrixdiagNaN3)
     figmatrix.columns=pd.Series(yeo2.BNA)
     figmatrix.index=pd.Series(yeo2.BNA)
@@ -199,8 +197,8 @@ def modYEOandMatrix(yeofile,matrixfile,nodes):
     #This mask variable gives you the possibility to plot only half of the correlation matrix.
     #If you want the full version, alter parameter  [ mask=mask --> half matrix, mask=None --> full matrix
 
-    mask = np.zeros_like(figmatrix.values, dtype=np.bool) 
-    mask[np.triu_indices_from(mask)] = True 
+    mask = np.zeros_like(figmatrix.values, dtype=np.bool)
+    mask[np.triu_indices_from(mask)] = True
 
     plt.figure(figsize = (10, 10))
     _ = sns.heatmap(figmatrix, cmap='coolwarm', cbar=True, square=False, mask=None)
@@ -213,7 +211,7 @@ def modYEOandMatrix(yeofile,matrixfile,nodes):
 
 ##########################
 #   PROCESS THE DATA     #
-########################## 
+##########################
 
 if __name__ == '__main__':
 
@@ -221,28 +219,3 @@ if __name__ == '__main__':
     for x in tqdm(range(len(subjfiles))):
         subj=subjfiles[x]
         modYEOandMatrix(yeofile,subj,EXnodes)
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

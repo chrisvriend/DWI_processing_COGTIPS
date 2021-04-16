@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Written by Anders L. Thorsen & C. Vriend April 2020
 
-# This script will register two longitudinal DTI volumes to a common within-subject template. The within-subject template can then be used to register mutliple subjects to each other.
+# This script will register two longitudinal DTI volumes to a common within-subject template.
+# The within-subject template can then be used to register mutliple subjects to each other.
 # A key benefit of this approach is that you minimize the number of transformations of the data,
 # rather than adding extra interpolations when tranforming between time points (within subject) and between subjects.
 # URL of manual is available here (http://dti-tk.sourceforge.net/pmwiki/pmwiki.php?n=Documentation.HomePage)

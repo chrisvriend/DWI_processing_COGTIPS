@@ -1,11 +1,10 @@
 #!/bin/bash
 
+# (C) C. vriend - Amsterdam UMC dpt. Psychiatry / Anatomy and Neurosciences - 2020
 # documentation:
 # https://mrtrix.readthedocs.io/en/latest/fixel_based_analysis/mt_fibre_density_cross-section.html
 # tract specific:
 #https://community.mrtrix.org/t/how-to-restrict-fixelcfestats-to-subset-of-tracts/845/2
-
-
 
 # --------------------------------------------------------------------------------------------
 #  SOURCE SOFTWARE
@@ -18,7 +17,6 @@
 cores=30
 # N threads to use per job
 threads=10
-
 
 # -----------------------------------------------------------------------------------------------
 # SET UP INPUT DIRECTORIES
