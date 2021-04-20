@@ -28,7 +28,8 @@ import seaborn as sns
 ########################
 workdir='/mnt/anw-archive/NP/yvdwerf/archive_COGTIPS/analysis/DWI/DWI_TBSS/connectomes/BNA'
 outputdir=os.path.join(workdir,'output2')
-yeofile=os.path.join(workdir,'YEO_BNA_subnetwork_labels.txt')
+# file containing de BNA + aseg nodes that are assigned to the different YEO 7N functional systems
+bnafile=os.path.join(workdir,'YEO_BNA_subnetwork_labels.txt')
 
 #BNA nodes to exclude (e.g. because outside FOV or no tracts stemming from these region)
 EXnodes=[117,118]
@@ -76,7 +77,7 @@ def symmetrize(mat):
 
 
 
-def modYEOandMatrix(yeofile,matrixfile,nodes):
+def modBNAlistandMatrix(bnafile,matrixfile,nodes):
     """
     Function to reshuffle the subnetwork 'key' file according to the nodes we
     want to remove. and do the same for the SC matrix.
@@ -84,8 +85,8 @@ def modYEOandMatrix(yeofile,matrixfile,nodes):
 
     Parameters
     ----------
-    yeofile : string
-        A string with the filepath to the list of nodes.
+    bnafile : string
+        A string with the filepath to the list of nodes w/ assignment to different YEO subnetworks.
     matrixfile : string
         A string with the filepath to the SC matrix
     nodes : list
@@ -97,54 +98,55 @@ def modYEOandMatrix(yeofile,matrixfile,nodes):
 
     """
 
-    filebase=(os.path.splitext(yeofile))[0]
+    filebase=(os.path.splitext(bnafile))[0]
     basematrix=(os.path.splitext(matrixfile))[0]
-    yeo=pd.read_csv(yeofile, delimiter="\t",names=['BNA','YEO'])
+    bna=pd.read_csv(bnafile, delimiter="\t",names=['BNA','YEO'])
     mat = np.genfromtxt(matrixfile, skip_header = 0, delimiter = ' ')
 
     # symmetrize matrix + convert to dataFrame
     PDmatrix=pd.DataFrame(symmetrize(mat))
 
-    if yeo.shape[0] != PDmatrix.shape[0]:
-       sys.exit('YEO label file and connectivity matrix do not have the same length - before exclusion of nodes')
+    if bna.shape[0] != PDmatrix.shape[0]:
+       sys.exit('BNA label file and connectivity matrix do not have the same length - before exclusion of nodes')
 
     for node in nodes:
 		# Get names of indexes for
-        indexNames = yeo[yeo['BNA'] == node ].index
+        indexNames = bna[bna['BNA'] == node ].index
 #        Delete these row indexes from dataFrame
-        yeo.drop(indexNames , inplace=True)
+        bna.drop(indexNames , inplace=True)
         # delete row
         PDmatrix.drop(indexNames,axis=0,inplace=True)
         # delete column
         PDmatrix.drop(indexNames,axis=1,inplace=True)
 
-    if yeo.shape[0] != PDmatrix.shape[0]:
-       sys.exit('YEO label file and connectivity matrix do not have the same length - after exclusion of nodes')
+    if bna.shape[0] != PDmatrix.shape[0]:
+       sys.exit('BNA label file and connectivity matrix do not have the same length - after exclusion of nodes')
 
     # reset index to be consistent with numpy SC matrix later on
-    yeo.reset_index(inplace=True,drop=True)
+    bna.reset_index(inplace=True,drop=True)
 
-    oddidx=yeo.index[yeo.BNA.isin([num for num in pd.Series(yeo.BNA) if num % 2 == 1])].tolist()
-    evenidx=yeo.index[yeo.BNA.isin([num for num in pd.Series(yeo.BNA) if num % 2 == 0])].tolist()
+    # determine the odd (= left) and even (=right) node labels to reshuffle the matrix and legend file
+    oddidx=bna.index[bna.BNA.isin([num for num in pd.Series(bna.BNA) if num % 2 == 1])].tolist()
+    evenidx=bna.index[bna.BNA.isin([num for num in pd.Series(bna.BNA) if num % 2 == 0])].tolist()
 
 
     # reshuffle legend file with odd and even using BNA label as 'key'
-    oddYEO=yeo[yeo.BNA.isin([num for num in pd.Series(yeo.BNA) if num % 2 == 1])]
-    evenYEO=yeo[yeo.BNA.isin([num for num in pd.Series(yeo.BNA) if num % 2 == 0])]
+    oddBNA=bna[bna.BNA.isin([num for num in pd.Series(bna.BNA) if num % 2 == 1])]
+    evenBNA=bna[bna.BNA.isin([num for num in pd.Series(bna.BNA) if num % 2 == 0])]
 
         # concatenate odd and even, reset index
-    yeo2=pd.concat([oddYEO,evenYEO],ignore_index=True)
+    bna2=pd.concat([oddBNA,evenBNA],ignore_index=True)
 
         #start index at 1 to be consistent with matlab
-    yeo2.index +=1
+    bna2.index +=1
 
     if not os.path.exists(os.path.join(outputdir,(filebase + '_mod2sample.txt'))):
 
         # write to txt w/ index
-        # yeo2.to_csv(filebase + '_mod2sample.csv',header=False,sep='\t')
+        # bna2.to_csv(filebase + '_mod2sample.csv',header=False,sep='\t')
 
         # write to txt w/o index (only needs to be saved once)
-        yeo2.to_csv(os.path.join(outputdir,(filebase + '_mod2sample.txt')),index=False,header=False,sep='\t')
+        bna2.to_csv(os.path.join(outputdir,(filebase + '_mod2sample.txt')),index=False,header=False,sep='\t')
 
     ###########################
     # reshuffle SC matrix
@@ -189,8 +191,8 @@ def modYEOandMatrix(yeofile,matrixfile,nodes):
 
 
     figmatrix = pd.DataFrame(matrixdiagNaN3)
-    figmatrix.columns=pd.Series(yeo2.BNA)
-    figmatrix.index=pd.Series(yeo2.BNA)
+    figmatrix.columns=pd.Series(bna2.BNA)
+    figmatrix.index=pd.Series(bna2.BNA)
     #figmatrix = figmatrix.sort_index(0).sort_index(1)
 
 
@@ -218,4 +220,4 @@ if __name__ == '__main__':
 
     for x in tqdm(range(len(subjfiles))):
         subj=subjfiles[x]
-        modYEOandMatrix(yeofile,subj,EXnodes)
+        modBNAlistandMatrix(bnafile,subj,EXnodes)
