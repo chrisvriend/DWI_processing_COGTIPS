@@ -288,7 +288,7 @@ for subj in $(ls *_aff.nii.gz); do
 	rm aff.nii.gz
 done
 
-# use dti_affine_sn for when to register individual subjects to existing template
+
 
 #########################################
 # Create mask of initial template to exclude voxels outside the brain
@@ -324,8 +324,16 @@ for subj in $(ls *_aff_diffeo.nii.gz); do
 	rm diffeo.nii.gz
 done
 
+
+########################################################
+# (OPTIONALLY) register additional subjects to template
+########################################################
+
+# use dti_affine_sn for when to register additional subjects not used in template creation to existing template
+#dti_affine_sn mean_initial.nii.gs additional_subjects.txt EDS
+
 # when *intial6.nii.gz available but certain subject-specific warps have not yet been created
-# ${dtitkdir}/scripts/dti_diffeomorphic_sn mean_final.nii.gz subjects_aff.txt mean_affine${Niter}_mask.nii.gz 6 0.002
+# dti_diffeomorphic_sn mean_diffeomorphic_initial6.nii.gz additional_subjects_aff.txt mean_affine${Niter}_mask.nii.gz 6 0.002
 
 #############################################
 # Generate the spatially normalized DTI subject data with the isotropic 1mm3 resolution
@@ -359,9 +367,8 @@ for subj in `cat ${tensor_dir}/subjects.txt`; do
 	done
 done
 
-# for subject with cross-sectional data
-#dti_warp_to_template_group subjects.txt mean_final 1 1 1
-
+# optionally for subject with only one time point
+#dti_warp_to_template_group cross_subjects.txt mean_diffeomorphic_initial6.nii.gz 1 1 1
 
 #############################################
 #Generate the population-specific DTI template with the isotropic 1mm3 spacing
