@@ -329,10 +329,9 @@ done
 # (OPTIONALLY) register additional subjects to template
 ########################################################
 
-# use dti_affine_sn for when to register additional subjects not used in template creation to existing template
-#dti_affine_sn mean_initial.nii.gs additional_subjects.txt EDS
-
-# when *intial6.nii.gz available but certain subject-specific warps have not yet been created
+# use dti_rigid_sn, dti_affine_sn and dti_diffeomorphic_sn  when to register additional subjects not used in template creation to existing template
+# dti_rigid_sn mean_diffeomorphic_initial6.nii.gz additional_subjects.txt EDS
+# dti_affine_sn mean_diffeomorphic_initial6.nii.gz additional_subjects.txt EDS 1
 # dti_diffeomorphic_sn mean_diffeomorphic_initial6.nii.gz additional_subjects_aff.txt mean_affine${Niter}_mask.nii.gz 6 0.002
 
 #############################################
